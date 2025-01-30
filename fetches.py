@@ -25,7 +25,7 @@ def __run_command(command: str):
         return ""
 
 def distro(architecture=False):
-    name = __run_command(f"cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
+    name = __run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
 
     if architecture:
         name += " " + platform.machine()
@@ -88,7 +88,6 @@ def kernel(small=True):
 
     return __add_function_marks(kernel_info)
 
-
 def terminal():
     return __add_function_marks(os.environ["TERM"].replace('xterm-', ''))
 
@@ -132,30 +131,35 @@ def packages():
         ('flatpak list',        'flatpak')
     ]
 
-    res = ""
     total_pkgs = 0
+    package_count = []
 
-    for p in packages_queries:
-        binary = p[0].split()[0]
+    for cmd, manager in packages_queries:
+        binary = cmd.split()[0]
 
-        if which(binary) is not None:
-            pkgs = len(__run_command(p[0]).splitlines())
-            total_pkgs += pkgs
-            if pkgs > 0:
-                res += f"{pkgs} {p[1]}, "
+        if which(binary):
+            pkgs = __run_command(cmd).splitlines()
+            num_pkgs = len(pkgs)
 
-    res = res.rstrip(', ')
+            if num_pkgs > 0:
+                package_count.append(f"{num_pkgs} {manager}")
 
-    if len(res.split()) == 2:
-        return __add_function_marks(f"{res.split()[0]} ({res.split()[1]})")
+            total_pkgs += num_pkgs
+
+    if len(package_count) > 1:
+        return __add_function_marks(f"{total_pkgs}, ({', '.join(package_count)})")
     else:
-        return __add_function_marks(f"{total_pkgs}, ({res})")
+        return __add_function_marks(f"{total_pkgs}")
         
+def _get_de():
+    ses = os.environ.get('DESKTOP_SESSION')
+    return ses if ses else os.environ.get('XDG_SESSION_DESKTOP')
+
 def de():
-    return __add_function_marks(os.environ['DESKTOP_SESSION'])
+    return __add_function_marks(_get_de())
 
 def wm(protocol=True):
-    des = os.environ['DESKTOP_SESSION'].lower()
+    des = _get_de().lower()
     res = des
 
     if 'gnome' in des:
@@ -204,11 +208,14 @@ def gtk_font():
 def cpu(round_to=2, full_name=False, colorize=False):
 
     cpu_data = __run_command("cat /proc/cpuinfo | grep 'model name'")
-    cpu_count = len(cpu_data.split('\n'))
-    cpu_info = cpu_data.split(':')[-1].strip()
+    cpu_count = len(cpu_data.splitlines())
+    cpu_info = cpu_data.split(':')[-1]
 
     if not full_name:
-        cpu_info = cpu_info.split('with')[0].strip()
+        if 'AMD' in cpu_info:
+            cpu_info = cpu_info.replace('AMD', '')
+        elif 'Intel' in cpu_info:
+            cpu_info = cpu_info.replace('Intel(R) Core(TM)', '')
 
     max_freq = int(__run_command("cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"))
 
@@ -229,25 +236,22 @@ def cpu(round_to=2, full_name=False, colorize=False):
         elif "INTEL" in cpu_info or 'i7' in cpu_info or "i3" in cpu_info or "i5" in cpu_info:
             full_cpu_info = f"{cf['5']}{full_cpu_info}{r}"
 
-
-    return __add_function_marks(full_cpu_info)
+    return __add_function_marks(full_cpu_info.strip())
 
 def gpu(full_name=True, colorize=False):
-    output = __run_command("lspci | grep 'VGA'").replace('VGA compatible controller:', '').split('\n')
+    lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
     gpus = []
 
-    for string in output:
-        matches = re.findall(r'\[(.*?)\]', string)
-        gpu = str(matches).replace("'", '').replace('[', '').replace(']', '')
+    for gpu_line in lspci_output:
+        gpu = ' '.join(re.findall(r'\[([^\]]+)\]', gpu_line))
         gpu_l = gpu.lower()
 
         if full_name:
-            if ("rtx" in gpu_l or "gtx" in gpu_l or "geforce" in gpu_l) and (not "nvidia" in gpu_l):
-                gpu = f"NVIDIA {gpu}"
+            if 'geforce' in gpu_l and (not 'nvidia' in gpu_l):
+                gpu =  'NVIDIA ' + gpu
+            elif 'radeon' in gpu_l and (not 'amd' in gpu_l):
+                gpu = 'AMD ' + gpu
 
-            elif ("ati" in gpu_l or "radeon" in gpu_l) and (not "amd" in gpu_l):
-                gpu = f"AMD {gpu}"
-            
         if colorize:
             if "NVIDIA" in gpu:
                 gpu = f"{cf[3]}{gpu}{r}"
@@ -311,27 +315,31 @@ def memory(GiB=True, round_to=3, colorize=True):
     except:
         return None
     
-def gpu_driver():
-    output = __run_command("lspci | grep 'VGA'").replace('VGA compatible controller:', '').split('\n')
+def gpu_driver(single_driver=True):
+    lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+
+    if single_driver:
+        lspci_output = [lspci_output[0]]
+        
     drivers = []
 
-    for string in output:
-        PPI = string.split('  ')[0]
-        info = __run_command(f'lspci -vv -s {PPI}')
-        for line in info.split('\n'):
-            if line.strip().startswith('Kernel driver in use:'):
-                driver_name = line.split(':')[-1].strip()
+    for string in lspci_output:
+        PPI = string.split()[0]
+        kernel_driver = __run_command(f"lspci -vv -s {PPI} | grep 'Kernel driver in use'").split(':')[-1].strip()
 
-                if driver_name.lower() == 'nvidia':
-                    driver_version = __run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
+        if kernel_driver == 'nvidia':
+            driver_version = __run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
 
-                    if __run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia") != None:
-                        driver_name = "nvidia-dkms"
+            if __run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia"):
+                kernel_driver = "nvidia-dkms"
 
-                    drivers.append(f'{driver_name} {driver_version}')
+            drivers.append(f'{kernel_driver} {driver_version}')
 
-                else:
-                    drivers.append(driver_name)
+        else:
+            drivers.append(kernel_driver)
+
+    if len(drivers) > 1:
+        return '%^&' + '%!&'.join(drivers)
 
     return __add_function_marks(drivers[0])
 
@@ -401,35 +409,36 @@ def disk(path='/', colorize=True, file_system=True, percent=True,
 
 def monitor(refresh_rate=True, inch=True):
     """
-    Get information about only one monitor with xrandr or 
+    Get information about monitors with xrandr or 
     by looking in to /sys/class/drm/*/modes file
     """
 
-    if which('xrandr') is None:
+    xrandr_output = __run_command("xrandr | grep '*' | awk '{print $1, $2}'")
+
+    if which('xrandr') is None or not xrandr_output:
         res = __run_command("cat /sys/class/drm/*/modes").split('\n')[0]
 
     else:
-        output_lines = __run_command("xrandr").split('\n')
-        current_resolution = output_lines[0].split("current")[1].split(',')[0].replace(' ', '')
-        refresh = float(output_lines[2].split()[1].replace('*', '').replace('+', ''))
-
-        res = current_resolution
-
-        if refresh_rate:
-            res += f" @ {round(refresh)}Hz"
-
+        monitors = []
+        for monitor in xrandr_output.splitlines():
+            resolution, refresh_rate = monitor.split()
+            monitor = resolution
+            if refresh_rate:
+                monitor += f" @ {round(float(refresh_rate.replace('*', '').replace('+', '') ))}Hz"
+            monitors.append(monitor)
+                
         if inch:
-            match = re.search(r'(\d+)mm x (\d+)mm', output_lines[1])
-            if match:
-                w_mm = int(match.group(1))
-                h_mm = int(match.group(2))
+            xrandr_monitor_info_output = __run_command('xrandr | grep -i "mm x"').splitlines()
+            for i, monitor in enumerate(xrandr_monitor_info_output):
+                w_mm, h_mm = re.findall(r"(\d+)mm x (\d+)mm", monitor)[0]
+                w_in, h_in = (int(w_mm) / 25.4, int(h_mm) / 25.4)
 
-                # Convert millimeters to inches (1 inch = 25.4 mm)
-                width_inch = w_mm / 25.4
-                height_inch = h_mm / 25.4
-
-                # Calculate the diagonal size in inches
-                diagonal_inch = int(math.sqrt(width_inch**2 + height_inch**2))
-                res += f' {diagonal_inch}"'
-
+                diagonal_inch = int(math.sqrt(w_in**2 + h_in**2))
+                monitors[i] += f' {diagonal_inch}"' 
+                
+    if len(monitors) > 1:
+        return '%^&' + '%!&'.join(monitors)
+    else:
+        res = monitors[0]
+        
     return __add_function_marks(res)

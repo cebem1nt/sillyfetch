@@ -3,7 +3,7 @@ from fetches import distro_id
 
 logos = {
     "arch" : {
-        "logo": f"""{cf[5]}
+        "logo": fr"""{cf[5]}
                    -`
                   .o+`
                  `ooo/,
@@ -18,11 +18,11 @@ logos = {
         .oossssso-````-oss-!,`+'
        -osssssso.      :ssss:;.,
       :osssssss/        osssso-++.
-     /ossssssss/        +ssssooo/.\\
+     /ossssssss/        +ssssooo/.\
    `/ossssso+/:-        -:/+osssso+-
   `+sso+:-`                 `.-/+oso:
  `++:.                           `-/+:
- \\.`                               ``/
+ \.`                               ``/
     """,
         "main_color": cf[5] 
     },

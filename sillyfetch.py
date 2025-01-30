@@ -17,7 +17,7 @@ def ensure_config_exist(config_dir: str):
             shutil.copy(os.path.join(current_dir, 'default_config.py'), config_file)
 
 def add_function_marks_wrapper(func):
-    # Wrapper function for custom user functions, to colorize them in the future
+    # Wrapper function for custom user functions, to colorize them while rendering
 
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
