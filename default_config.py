@@ -78,8 +78,8 @@ settings = {
     "logo" : "auto",
     # ascii logo to be displayed
     # values :
-    #   'auto'   # automatically set logo 
-    #   variable # dictionary with custom ascii art
+    #   'auto'    # automatically set logo 
+    #   variable  # dictionary with custom ascii art
     #       example and format:
 
     #       from colorama import Fore as f
@@ -98,8 +98,10 @@ settings = {
     #                             # manually insert colors per line, and set this as main color of logo
     #       }
      
-    #   distro names:   # if you want exact distro ascci art, pass distro name with 'name_' prefix 
-    #       name_arch (other are in progress)
+    #   distro names:   # if you want exact distro ascci art, pass distro's name
+    #       Names:
+    #       arch ubuntu debian fedora centos manjaro alpine linuxmint opensuse-leap kali parrot zorin
+    #       slackware solus puppy tails rhel clear artix void opensuse-tumbleweed peppermintos gentoo
 
     "logo_info_whitespace" : 3,
     # lenght of whitespace between logo and information

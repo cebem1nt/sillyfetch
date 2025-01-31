@@ -8,13 +8,9 @@ def ensure_config_exist(config_dir: str):
     #Check does config exist, copy default one if no config found
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
-
-        config_file = os.path.join(config_dir, 'config.py')
-
-        if not os.path.exists(config_file):
-            
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            shutil.copy(os.path.join(current_dir, 'default_config.py'), config_file)
+        config_file = os.path.join(config_dir, 'config.py')        
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        shutil.copy(os.path.join(current_dir, 'default_config.py'), config_file)
 
 def add_function_marks_wrapper(func):
     # Wrapper function for custom user functions, to colorize them while rendering
@@ -84,13 +80,9 @@ class ConfigInterlayer:
         elif self._logo == "auto":
             return get_logos_values()["logo"]
         
-        elif self._logo.startswith("name_"):
-            distro_name = self._logo.replace("name_", '')
-            return get_logos_values(key=distro_name)["logo"]
-        
         else:
-            raise KeyError(f"Incorrect logo: {self._logo}")
-        
+            return get_logos_values(key=self._logo)["logo"]
+
 
     def get_logo_main_color(self):
         if isinstance(self._logo, dict) and "logo" in self._logo:
@@ -99,12 +91,8 @@ class ConfigInterlayer:
         elif self._logo == "auto":
             return get_logos_values()["main_color"]
         
-        elif self._logo.startswith("name_"):
-            distro_name = self._logo.replace("name_", '')
-            return get_logos_values(key=distro_name)["main_color"]
-        
         else:
-            raise KeyError(f"Incorrect logo: {self._logo}")
+            return get_logos_values(key=self._logo)["main_color"]
 
 
     def get_evaluated_layout(self):
@@ -236,7 +224,6 @@ def main(config_dir='~/.config/sillyfetch'):
 
     from config import settings
     config_object = ConfigInterlayer(settings)
-
     render(config_object)
 
 if __name__ == '__main__':
