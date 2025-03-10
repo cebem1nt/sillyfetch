@@ -1,7 +1,9 @@
-import os, socket, re, math, platform
+import os, socket, re, math, platform, time, json
 from shutil import which
 from colors import cb, cf, r
 from subprocess import run, PIPE, CalledProcessError
+
+__CACHE_DIR = os.path.expanduser("~/.cache/sillyfetch")
 
 def __add_function_marks(string : str):
     # Add special marks to identify beginning and the end of function's output
@@ -23,6 +25,28 @@ def __run_command(command: str):
     except CalledProcessError as e:
         print(e)
         return ""
+
+def __set_cache(key:str, val: any):
+    os.makedirs(__CACHE_DIR, exist_ok=True)
+
+    with open(os.path.join(__CACHE_DIR, key), 'w') as f:
+        json.dump(val, f)
+
+def __get_cache(key:str, expiration_days = 30) -> str:
+    cached_file = os.path.join(__CACHE_DIR, key)
+    expiration_time = expiration_days * 86400
+
+    try:
+        modification_time = os.path.getmtime(cached_file)
+        current_time = time.time()
+
+        if current_time - modification_time < expiration_time:
+            with open(cached_file, 'r') as f:
+                return json.load(f)
+        else:
+            os.remove(cached_file)  # if the cache has expired delete the file
+    except:
+        return None
 
 def distro(architecture=False):
     name = __run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
@@ -149,7 +173,8 @@ def packages():
     if len(package_count) > 1:
         return __add_function_marks(f"{total_pkgs}, ({', '.join(package_count)})")
     else:
-        return __add_function_marks(f"{total_pkgs}")
+        _, manager = package_count[0].split()
+        return __add_function_marks(f"{total_pkgs}, {manager}")
         
 def _get_de():
     ses = os.environ.get('DESKTOP_SESSION')
@@ -238,35 +263,6 @@ def cpu(round_to=2, full_name=False, colorize=False):
 
     return __add_function_marks(full_cpu_info.strip())
 
-def gpu(full_name=True, colorize=False):
-    lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
-    gpus = []
-
-    for gpu_line in lspci_output:
-        gpu = ' '.join(re.findall(r'\[([^\]]+)\]', gpu_line))
-        gpu_l = gpu.lower()
-
-        if full_name:
-            if 'geforce' in gpu_l and (not 'nvidia' in gpu_l):
-                gpu =  'NVIDIA ' + gpu
-            elif 'radeon' in gpu_l and (not 'amd' in gpu_l):
-                gpu = 'AMD ' + gpu
-
-        if colorize:
-            if "NVIDIA" in gpu:
-                gpu = f"{cf[3]}{gpu}{r}"
-
-            elif "AMD" in gpu:
-                gpu = f"{cf[2]}{gpu}{r}"
-
-        gpus.append(gpu)
-        
-    if len(gpus) > 1:
-        return '%^&' + '%!&'.join(gpus)
-
-    return __add_function_marks(gpus[0])
-
-
 def memory(GiB=True, round_to=3, colorize=True):
     memory_total = 0
     memory_used = 0
@@ -314,29 +310,60 @@ def memory(GiB=True, round_to=3, colorize=True):
  
     except:
         return None
+
+def gpu(full_name=True, colorize=False):
+    gpus = __get_cache('gpus') or []
+
+    if not len(gpus):
+        lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+        gpus = [' '.join(re.findall(r'\[([^\]]+)\]', gpu_line)) for gpu_line in lspci_output]
+        __set_cache('gpus', gpus)
+
+    for gpu in gpus:
+        gpu_l = gpu.lower()
+
+        if full_name:
+            if 'geforce' in gpu_l and (not 'nvidia' in gpu_l):
+                gpu =  'NVIDIA ' + gpu
+            elif 'radeon' in gpu_l and (not 'amd' in gpu_l):
+                gpu = 'AMD ' + gpu
+
+        if colorize:
+            if "NVIDIA" in gpu:
+                gpu = f"{cf[3]}{gpu}{r}"
+
+            elif "AMD" in gpu:
+                gpu = f"{cf[2]}{gpu}{r}"
+
+    if len(gpus) > 1:
+        return '%^&' + '%!&'.join(gpus)
+
+    return __add_function_marks(gpus[0])
     
 def gpu_driver(single_driver=True):
-    lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+    drivers = __get_cache('drivers', 10) or []
+    
+    if not len(drivers):
+        lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+
+        for string in lspci_output:
+            PPI = string.split()[0]
+            kernel_driver = __run_command(f"lspci -vv -s {PPI} | grep 'Kernel driver in use'").split(':')[-1].strip()
+
+            if kernel_driver == 'nvidia':
+                driver_version = __run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
+
+                if __run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia"):
+                    kernel_driver = "nvidia-dkms"
+
+                drivers.append(f'{kernel_driver} {driver_version}')
+
+            else:
+                drivers.append(kernel_driver)
+        __set_cache('drivers', drivers)
 
     if single_driver:
-        lspci_output = [lspci_output[0]]
-        
-    drivers = []
-
-    for string in lspci_output:
-        PPI = string.split()[0]
-        kernel_driver = __run_command(f"lspci -vv -s {PPI} | grep 'Kernel driver in use'").split(':')[-1].strip()
-
-        if kernel_driver == 'nvidia':
-            driver_version = __run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
-
-            if __run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia"):
-                kernel_driver = "nvidia-dkms"
-
-            drivers.append(f'{kernel_driver} {driver_version}')
-
-        else:
-            drivers.append(kernel_driver)
+        drivers = [drivers[0]]
 
     if len(drivers) > 1:
         return '%^&' + '%!&'.join(drivers)
