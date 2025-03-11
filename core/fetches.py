@@ -1,60 +1,15 @@
-import os, socket, re, math, platform, time, json
+from utils.colors import cb, cf, r
+from utils.functions import add_function_marks, run_command, set_cache, get_cache
 from shutil import which
-from colors import cb, cf, r
-from subprocess import run, PIPE, CalledProcessError
-
-__CACHE_DIR = os.path.expanduser("~/.cache/sillyfetch")
-
-def __add_function_marks(string : str):
-    # Add special marks to identify beginning and the end of function's output
-    return "%^^" + string + "^^%"
-
-def __run_command(command: str):
-    #
-    # Run linux specific shell comands silently 
-    # return empty string if couldnt run command
-    # 
-    try:
-        result = run(command, stdout=PIPE, stderr=PIPE, shell=True, text=True)
-        
-        if result.returncode == 0:
-            return result.stdout.strip()
-        else:
-            return ""
-            
-    except CalledProcessError as e:
-        print(e)
-        return ""
-
-def __set_cache(key:str, val: any):
-    os.makedirs(__CACHE_DIR, exist_ok=True)
-
-    with open(os.path.join(__CACHE_DIR, key), 'w') as f:
-        json.dump(val, f)
-
-def __get_cache(key:str, expiration_days = 30) -> str:
-    cached_file = os.path.join(__CACHE_DIR, key)
-    expiration_time = expiration_days * 86400
-
-    try:
-        modification_time = os.path.getmtime(cached_file)
-        current_time = time.time()
-
-        if current_time - modification_time < expiration_time:
-            with open(cached_file, 'r') as f:
-                return json.load(f)
-        else:
-            os.remove(cached_file)  # if the cache has expired delete the file
-    except:
-        return None
+import os, socket, re, math, platform
 
 def distro(architecture=False):
-    name = __run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
+    name = run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
 
     if architecture:
         name += " " + platform.machine()
 
-    return __add_function_marks(name)
+    return add_function_marks(name)
 
 def distro_id():
     if os.path.isfile('/bedrock/etc/os-release'):
@@ -64,7 +19,7 @@ def distro_id():
     else:
         raise FileNotFoundError("Can't find distro info file")
 
-    id = __run_command(f"cat {os_file} | grep 'ID'").split('\n')[0].split('=')[1]
+    id = run_command(f"cat {os_file} | grep 'ID'").split('\n')[0].split('=')[1]
     
     return id
 
@@ -76,20 +31,20 @@ def model(version=False):
     product_info = ""
 
     if os.path.exists(device_name_file):
-        product_info = __run_command(f"cat {device_name_file}").strip()
+        product_info = run_command(f"cat {device_name_file}").strip()
 
         if os.path.exists(device_version_file) and version:
-            product_version = __run_command(f"cat {device_version_file}").strip()
+            product_version = run_command(f"cat {device_version_file}").strip()
             product_info += f" ({product_version})"
 
-    return __add_function_marks(product_info)
+    return add_function_marks(product_info)
 
 def shell(version=True):
     shell = os.environ["SHELL"].split('/')[-1]
 
     pairs = {
-        "fish" : lambda: __run_command("fish --version").replace("fish, version ","").strip(),
-        "zsh"  : lambda: __run_command("zsh --version").split()[1],
+        "fish" : lambda: run_command("fish --version").replace("fish, version ","").strip(),
+        "zsh"  : lambda: run_command("zsh --version").split()[1],
         "bash" : lambda: os.environ.get('BASH_VERSION', '').split('(')[0].strip()
     }
 
@@ -102,21 +57,21 @@ def shell(version=True):
 
         shell = f"{shell} {shell_ver}"
     
-    return __add_function_marks(shell)
+    return add_function_marks(shell)
 
 def kernel(small=True):
-    kernel_info = __run_command("uname -r")
+    kernel_info = run_command("uname -r")
 
     if not small:
         kernel_info = "Linux " + kernel_info
 
-    return __add_function_marks(kernel_info)
+    return add_function_marks(kernel_info)
 
 def terminal():
-    return __add_function_marks(os.environ["TERM"].replace('xterm-', ''))
+    return add_function_marks(os.environ["TERM"].replace('xterm-', ''))
 
 def uptime(up=False, length="full"):
-    uptime_info = __run_command("uptime -p")
+    uptime_info = run_command("uptime -p")
 
     if not up:
         uptime_info = uptime_info.replace("up ", "")
@@ -127,10 +82,10 @@ def uptime(up=False, length="full"):
     elif length == "short":
         uptime_info = uptime_info.replace(' minutes', 'm').replace(' hours', 'h').replace(' minute', 'm').replace(' hour', 'h')
 
-    return __add_function_marks(uptime_info)
+    return add_function_marks(uptime_info)
 
 def hostname():
-    return __add_function_marks(f"{os.environ['USER']}@{socket.gethostname()}")
+    return add_function_marks(f"{os.environ['USER']}@{socket.gethostname()}")
 
 def packages():
     # tuple : querry command, package-manager name
@@ -162,7 +117,7 @@ def packages():
         binary = cmd.split()[0]
 
         if which(binary):
-            pkgs = __run_command(cmd).splitlines()
+            pkgs = run_command(cmd).splitlines()
             num_pkgs = len(pkgs)
 
             if num_pkgs > 0:
@@ -171,17 +126,17 @@ def packages():
             total_pkgs += num_pkgs
 
     if len(package_count) > 1:
-        return __add_function_marks(f"{total_pkgs}, ({', '.join(package_count)})")
+        return add_function_marks(f"{total_pkgs}, ({', '.join(package_count)})")
     else:
         _, manager = package_count[0].split()
-        return __add_function_marks(f"{total_pkgs}, {manager}")
+        return add_function_marks(f"{total_pkgs}, {manager}")
         
 def _get_de():
     ses = os.environ.get('DESKTOP_SESSION')
     return ses if ses else os.environ.get('XDG_SESSION_DESKTOP')
 
 def de():
-    return __add_function_marks(_get_de())
+    return add_function_marks(_get_de())
 
 def wm(protocol=True):
     des = _get_de().lower()
@@ -203,13 +158,13 @@ def wm(protocol=True):
     if protocol:
         res = f"{res} ({os.getenv('XDG_SESSION_TYPE').strip().capitalize()})"
 
-    return __add_function_marks(res)
+    return add_function_marks(res)
     
 def __gtk_fetch(param: str):
     try:
         gtk_config_path = os.path.expanduser('~/.config/gtk-3.0/settings.ini')
         if os.path.exists(gtk_config_path):
-           out = __run_command(f"cat {gtk_config_path} | grep '{param}'")
+           out = run_command(f"cat {gtk_config_path} | grep '{param}'")
            return out.split('=', maxsplit=1)[1].strip()
                     
         return None
@@ -218,21 +173,21 @@ def __gtk_fetch(param: str):
         return None
 
 def gtk_theme():
-    return __add_function_marks(__gtk_fetch('gtk-theme-name'))
+    return add_function_marks(__gtk_fetch('gtk-theme-name'))
     
 def icon_theme():
-    return __add_function_marks(__gtk_fetch('gtk-icon-theme-name'))
+    return add_function_marks(__gtk_fetch('gtk-icon-theme-name'))
     
 def cursor_theme():
-    return __add_function_marks(__gtk_fetch('gtk-cursor-theme-name'))
+    return add_function_marks(__gtk_fetch('gtk-cursor-theme-name'))
 
 def gtk_font():
-    return __add_function_marks(__gtk_fetch('gtk-font-name'))
+    return add_function_marks(__gtk_fetch('gtk-font-name'))
 
 
 def cpu(round_to=2, full_name=False, colorize=False):
 
-    cpu_data = __run_command("cat /proc/cpuinfo | grep 'model name'")
+    cpu_data = run_command("cat /proc/cpuinfo | grep 'model name'")
     cpu_count = len(cpu_data.splitlines())
     cpu_info = cpu_data.split(':')[-1]
 
@@ -242,7 +197,7 @@ def cpu(round_to=2, full_name=False, colorize=False):
         elif 'Intel' in cpu_info:
             cpu_info = cpu_info.replace('Intel(R) Core(TM)', '')
 
-    max_freq = int(__run_command("cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"))
+    max_freq = int(run_command("cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"))
 
     cpu_max_freq_mhz = max_freq / 1000
     cpu_max_freq_ghz = max_freq / 1000 / 1000
@@ -261,7 +216,7 @@ def cpu(round_to=2, full_name=False, colorize=False):
         elif "INTEL" in cpu_info or 'i7' in cpu_info or "i3" in cpu_info or "i5" in cpu_info:
             full_cpu_info = f"{cf['5']}{full_cpu_info}{r}"
 
-    return __add_function_marks(full_cpu_info.strip())
+    return add_function_marks(full_cpu_info.strip())
 
 def memory(GiB=True, round_to=3, colorize=True):
     memory_total = 0
@@ -299,27 +254,27 @@ def memory(GiB=True, round_to=3, colorize=True):
             memory_free = str(round(memory_free / 1024, round_to)) + ' GiB'
 
         else:
-            memory_used = str(round(memory_used / 1024, round_to)) + ' MiB'
-            memory_total = str(round(memory_total / 1024, round_to)) + ' MiB'
-            memory_free = str(round(memory_free / 1024, round_to)) + ' MiB'
+            memory_used = str(round(memory_used, round_to)) + ' MiB'
+            memory_total = str(round(memory_total, round_to)) + ' MiB'
+            memory_free = str(round(memory_free, round_to)) + ' MiB'
 
         if colorize:
             memory_percent = f"{cf[3]}{memory_percent}"
 
-        return __add_function_marks(f'{memory_used} / {memory_total} ({memory_percent}%%^^)')
+        return add_function_marks(f'{memory_used} / {memory_total} ({memory_percent}%%^^)')
  
     except:
         return None
 
 def gpu(full_name=True, colorize=False):
-    gpus = __get_cache('gpus') or []
+    gpus = get_cache('gpus') or []
 
     if not len(gpus):
-        lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+        lspci_output = run_command("lspci | grep 'VGA'").splitlines()
         gpus = [' '.join(re.findall(r'\[([^\]]+)\]', gpu_line)) for gpu_line in lspci_output]
-        __set_cache('gpus', gpus)
+        set_cache('gpus', gpus)
 
-    for gpu in gpus:
+    for i, gpu in enumerate(gpus):
         gpu_l = gpu.lower()
 
         if full_name:
@@ -335,32 +290,37 @@ def gpu(full_name=True, colorize=False):
             elif "AMD" in gpu:
                 gpu = f"{cf[2]}{gpu}{r}"
 
+            elif "Intel" in gpu:
+                gpu = f"{cf[5]}{gpu}{r}"
+
+        gpus[i] = gpu
+        
     if len(gpus) > 1:
         return '%^&' + '%!&'.join(gpus)
 
-    return __add_function_marks(gpus[0])
+    return add_function_marks(gpus[0])
     
 def gpu_driver(single_driver=True):
-    drivers = __get_cache('drivers', 10) or []
+    drivers = get_cache('drivers', 10) or []
     
     if not len(drivers):
-        lspci_output = __run_command("lspci | grep 'VGA'").splitlines()
+        lspci_output = run_command("lspci | grep 'VGA'").splitlines()
 
         for string in lspci_output:
             PPI = string.split()[0]
-            kernel_driver = __run_command(f"lspci -vv -s {PPI} | grep 'Kernel driver in use'").split(':')[-1].strip()
+            kernel_driver = run_command(f"lspci -vv -s {PPI} | grep 'Kernel driver in use'").split(':')[-1].strip()
 
             if kernel_driver == 'nvidia':
-                driver_version = __run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
+                driver_version = run_command('cat /proc/driver/nvidia/version').split('  ')[1] 
 
-                if __run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia"):
+                if run_command("ls /lib/modules/$(uname -r)/updates/dkms | grep nvidia"):
                     kernel_driver = "nvidia-dkms"
 
                 drivers.append(f'{kernel_driver} {driver_version}')
 
             else:
                 drivers.append(kernel_driver)
-        __set_cache('drivers', drivers)
+        set_cache('drivers', drivers)
 
     if single_driver:
         drivers = [drivers[0]]
@@ -368,7 +328,7 @@ def gpu_driver(single_driver=True):
     if len(drivers) > 1:
         return '%^&' + '%!&'.join(drivers)
 
-    return __add_function_marks(drivers[0])
+    return add_function_marks(drivers[0])
 
 def colors(background=True, char="   ", normal_only=False):
     res = ""
@@ -386,8 +346,7 @@ def colors(background=True, char="   ", normal_only=False):
     return res
 
 
-def disk(path='/', colorize=True, file_system=True, percent=True,
-         round_mem_to=2):
+def disk(path='/', colorize=True, file_system=True, percent=True, round_mem_to=2):
     stat = os.statvfs(path)
     
     # Calculate space in bytes
@@ -423,14 +382,14 @@ def disk(path='/', colorize=True, file_system=True, percent=True,
 
 
     if file_system:
-        output = __run_command('df -T | grep "/dev"')
+        output = run_command('df -T | grep "/dev"')
         for line in output.splitlines():
             if line.startswith('/dev'):
                 fs = line.split(' ')[1].strip() 
                 res += f" - {fs}"
                 break
 
-    return __add_function_marks(res)
+    return add_function_marks(res)
 
 
 
@@ -440,10 +399,10 @@ def monitor(refresh_rate=True, inch=True):
     by looking in to /sys/class/drm/*/modes file
     """
 
-    xrandr_output = __run_command("xrandr | grep '*' | awk '{print $1, $2}'")
+    xrandr_output = run_command("xrandr | grep '*' | awk '{print $1, $2}'")
 
     if which('xrandr') is None or not xrandr_output:
-        res = __run_command("cat /sys/class/drm/*/modes").split('\n')[0]
+        res = run_command("cat /sys/class/drm/*/modes").split('\n')[0]
 
     else:
         monitors = []
@@ -455,7 +414,7 @@ def monitor(refresh_rate=True, inch=True):
             monitors.append(monitor)
                 
         if inch:
-            xrandr_monitor_info_output = __run_command('xrandr | grep -i "mm x"').splitlines()
+            xrandr_monitor_info_output = run_command('xrandr | grep -i "mm x"').splitlines()
             for i, monitor in enumerate(xrandr_monitor_info_output):
                 w_mm, h_mm = re.findall(r"(\d+)mm x (\d+)mm", monitor)[0]
                 w_in, h_in = (int(w_mm) / 25.4, int(h_mm) / 25.4)
@@ -468,4 +427,4 @@ def monitor(refresh_rate=True, inch=True):
     else:
         res = monitors[0]
         
-    return __add_function_marks(res)
+    return add_function_marks(res)

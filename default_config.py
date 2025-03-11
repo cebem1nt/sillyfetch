@@ -24,7 +24,88 @@ settings = {
         {colors()}
 
     """,
-    #{cursor_theme()} {gpu_driver()} {gtk_font()} {terminal()}
+    # Possible functions:
+    #   uptime(up=False, length="full") 
+    #   Returns uptime. If up is True, adds up in the beginning. Also can take length of the output. 
+    #   Possible values for length are "full", "medium", "short"
+    #
+    #   distro(architecture=True)       
+    #   Returns distribution name. Optionally shows architecture
+    #
+    #   model(version=True)             
+    #   Returns model of the pc. Optionally shows the version of the model
+    #
+    #   shell(version=True)             
+    #   Returns current shell in use. Optionally shows shell's version
+    # 
+    #   kernel(small=True)        
+    #   Returns kernel version. Optionally returns smaller string
+    #
+    #   terminal()                
+    #   Returns current terminal emulator
+    #
+    #   hostname()
+    #   Returns hostname
+    #
+    #   packages()
+    #   Returns package manager and amount of installed packages
+    #
+    #   de()
+    #   Returns current desktop environment
+    #
+    #   wm(protocol=True)
+    #   Returns current window manager. Optionally shows protocol (X11 or Wayland)
+    #
+    #   gtk_theme()
+    #   Returns current GTK theme
+    #
+    #   icon_theme()
+    #   Returns current icon theme
+    #
+    #   cursor_theme()
+    #   Returns current cursor theme
+    #
+    #   gtk_font()
+    #   Returns current font
+    # 
+    #   cpu(round_to=2, full_name=False, colorize=False)
+    #   Returns CPU information. 
+    #   By default rounds cpu speed to 2 decimal places
+    #   If full name is set to True, Returns full name, for example: "AMD Ryzen 6000", If not, "Ryzen 6000"
+    #   If colorize set to True, will color Intel CPU output to blue and AMD CPU output to red :) 
+    #
+    #   memory(GiB=True, round_to=3, colorize=True)
+    #   Returns RAM usage info
+    #   If GiB set to False, returns memory in MiB
+    #   By default rounds memory to 3 decimal places
+    #   If colorize set to True, colorizes usage percent to green
+    #
+    #   gpu(full_name=True, colorize=False)
+    #   Returns GPU(s) info
+    #   If full name is set to false, Will remove Nvidia or AMD or Intel
+    #   If colorize is set to True, colorizes GPU name based on gpu vendor
+    #
+    #   gpu_driver(single_driver=True)
+    #   Returns GPU Driver(s) in use info
+    #   If single_driver is set to True, Returns only first GPU driver info
+    #   
+    #   colors(background=True, char="   ", normal_only=False)
+    #   Prints cololors or colorized character
+    #   If background is set to True, colorizes background instead of foreground
+    #   If normal only is set to True, will not print bright collors  
+    #   "char" is the character used to print colors
+    #   
+    #   disk(path='/', colorize=True, file_system=True, percent=True, round_mem_to=2)
+    #   Returns Disk usage
+    #   You can set another path, which will show the usage of some specific directory
+    #   If percent is set to True, will show the percent usage
+    #   If colorize set to True, colorizes percent usage to green
+    #   By default rounds disk size to 2 decimal places
+    #   
+    #   monitor(refresh_rate=True, inch=True)
+    #   Returns monitor info
+    #   By default shows refresh rate and monitor size in inches
+    #
 
 
     "custom_fetches": {
@@ -55,16 +136,16 @@ settings = {
     "text_color" : "logo", 
     # the color text will displayed with, text only, not result of functions
     # values :
-    # 1:    # black
-    # 2:    # red
-    # 3:    # green
-    # 4:    # yellow
-    # 5:    # blue
-    # 6:    # magenta
-    # 7:    # cyan
-    # 8:    # white
-    # 9:   # bright black
-    # 10:  # bright red
+    # 1   # black
+    # 2:  # red
+    # 3:  # green
+    # 4:  # yellow
+    # 5:  # blue
+    # 6:  # magenta
+    # 7:  # cyan
+    # 8:  # white
+    # 9:  # bright black
+    # 10: # bright red
     # 11: # bright green
     # 12: # bright yellow
     # 13: # bright blue
@@ -93,13 +174,13 @@ settings = {
     #               ;           ;
     #               "'-_____-'"
     #               """,
-    #       "main_color" : f.RED  # main color of the logo. you can use ansii codes or python colorama module
-    #                             # if logo is colorless leave it empy. if you have multicolored logo,
-    #                             # manually insert colors per line, and set this as main color of logo
+    #           "main_color" : f.RED  # main color of the logo. you can use ansii codes or python colorama module
+    #                                 # if logo is colorless leave it empy. if you have multicolored logo,
+    #                                 # manually insert colors per line, and set this as main color of logo
     #       }
      
     #   distro names:   # if you want exact distro ascci art, pass distro's name
-    #       Names:
+    #       Values:
     #       arch ubuntu debian fedora centos manjaro alpine linuxmint opensuse-leap kali parrot zorin
     #       slackware solus puppy tails rhel clear artix void opensuse-tumbleweed peppermintos gentoo
 

@@ -1,5 +1,5 @@
-from colors import cf
-from fetches import distro_id
+from utils.colors import cf
+from core.fetches import distro_id
 
 logos = {
     "arch" : {
