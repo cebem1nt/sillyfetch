@@ -11,6 +11,7 @@ fi
 if [ ! -f "$SILLYFETCH_BIN" ]; then
     echo "Adding shortcut to /usr/bin ..."
     echo "python3 $(pwd)/sillyfetch.py" | sudo tee "$SILLYFETCH_BIN" > /dev/null
+    sudo chmod +x "$SILLYFETCH_BIN"
 fi
 
 echo "Setup finished"
