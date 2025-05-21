@@ -2,6 +2,10 @@
 
 Sillyfetch is a python neofetch clone/alternative call it however you want, with huge customizability.  
 
+## Installation
+- Just run setup.sh if you want it to create a small script in /usr/bin
+- Or simply run it with `python sillyfetch.py`
+
 By the way, it has no dependencies which is weird for a python project :)
 
 ## Important
