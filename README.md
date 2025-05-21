@@ -13,7 +13,7 @@ I'm sure this project has a whole bunch of bugs, so please lower your expectatio
 ![Preview](assets/preview.png)
 
 Possible configuration
-![Video](assets/preview.mp4)
+![Video](assets/preview.gif)
 
 ## Configuration
 
