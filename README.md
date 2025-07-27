@@ -16,9 +16,6 @@ I'm sure this project has a whole bunch of bugs, so please lower your expectatio
 
 ![Preview](assets/preview.png)
 
-Possible configuration
-![Video](assets/preview.gif)
-
 ## Configuration
 
 Sillyfetch is configured by python config file, which will be copied by default in `~/.config/sillyfetch/config.py`. 

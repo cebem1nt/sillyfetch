@@ -325,7 +325,7 @@ def gpu_driver(single_driver=True):
     if single_driver:
         drivers = [drivers[0]]
 
-    if len(drivers) > 1:
+    elif len(drivers) > 1:
         return '%^&' + '%!&'.join(drivers)
 
     return add_function_marks(drivers[0])
@@ -395,13 +395,15 @@ def disk(path='/', colorize=True, file_system=True, percent=True, round_mem_to=2
 
 def monitor(refresh_rate=True, inch=True):
     """
-    Get information about monitors with xrandr or 
-    by looking in to /sys/class/drm/*/modes file
+    Get information about monitors with xrandr or
+    by looking in to /sys/class/drm/*/modes file.
+
+    TODO: Doesn't work without xorg / xwayland
     """
 
     xrandr_output = run_command("xrandr | grep '*' | awk '{print $1, $2}'")
 
-    if which('xrandr') is None or not xrandr_output:
+    if which('xrandr') is None or "Can't open display" in xrandr_output:
         res = run_command("cat /sys/class/drm/*/modes").split('\n')[0]
 
     else:
@@ -409,12 +411,14 @@ def monitor(refresh_rate=True, inch=True):
         for monitor in xrandr_output.splitlines():
             resolution, refresh_rate = monitor.split()
             monitor = resolution
+           
             if refresh_rate:
                 monitor += f" @ {round(float(refresh_rate.replace('*', '').replace('+', '') ))}Hz"
             monitors.append(monitor)
                 
         if inch:
             xrandr_monitor_info_output = run_command('xrandr | grep -i "mm x"').splitlines()
+           
             for i, monitor in enumerate(xrandr_monitor_info_output):
                 w_mm, h_mm = re.findall(r"(\d+)mm x (\d+)mm", monitor)[0]
                 w_in, h_in = (int(w_mm) / 25.4, int(h_mm) / 25.4)
