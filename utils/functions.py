@@ -3,16 +3,17 @@ from subprocess import run, PIPE, CalledProcessError
 
 __CACHE_DIR = os.path.expanduser("~/.cache/sillyfetch")
 
-def add_function_marks(string : str):
+def add_function_marks(out: any):
     # Add special marks to identify beginning and the end of function's output
-    return "%^^" + string + "^^%"
+    # Also ensure the out is converted to string
+    return "%^^" + str(out) + "^^%"
 
 def add_function_marks_wrapper(func):
     # Wrapper function for custom user functions, to colorize them while rendering
 
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        wrapped = "%^^" + str(result) + "^^%"
+        wrapped = add_function_marks(result)
         return wrapped
     
     return wrapper

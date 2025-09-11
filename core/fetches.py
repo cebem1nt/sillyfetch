@@ -17,7 +17,7 @@ def distro_id():
     elif os.path.isfile('/etc/os-release'):
         os_file = '/etc/os-release'
     else:
-        raise FileNotFoundError("Can't find distro info file")
+        return ""
 
     id = run_command(f"cat {os_file} | grep 'ID'").split('\n')[0].split('=')[1]
     
@@ -159,31 +159,60 @@ def wm(protocol=True):
         res = f"{res} ({os.getenv('XDG_SESSION_TYPE').strip().capitalize()})"
 
     return add_function_marks(res)
-    
+
+def __make_me_pretty(string: str):
+    return string.strip().replace('"', '').replace("'", '')
+
 def __gtk_fetch(param: str):
-    try:
-        gtk_config_path = os.path.expanduser('~/.config/gtk-3.0/settings.ini')
-        if os.path.exists(gtk_config_path):
-           out = run_command(f"cat {gtk_config_path} | grep '{param}'")
-           return out.split('=', maxsplit=1)[1].strip()
-                    
-        return None
-    except Exception as e:
-        print(f"Error fetching GTK theme: {str(e)}")
-        return None
+    gtk_config_paths = [
+        os.path.expanduser('~/.config/gtk-3.0/settings.ini'),
+        '/etc/gtk-3.0/settings.ini',
+        '/usr/share/gtk-3.0/settings.ini'
+    ]
+
+    for gtk_config_path in gtk_config_paths:
+        if not os.path.exists(gtk_config_path):
+            continue 
+            
+        out = run_command(f"grep '{param}' {gtk_config_path}")
+        if out:
+            return __make_me_pretty(out.split('=', maxsplit=1)[1])
+
+    return ""
+
+# gsettings is quite popular out of gnome distros. It might be used in other setups
 
 def gtk_theme():
-    return add_function_marks(__gtk_fetch('gtk-theme-name'))
-    
+    res = __make_me_pretty(
+        run_command("gsettings get org.gnome.desktop.interface gtk-theme"))
+    if not res:
+        res = __gtk_fetch('gtk-theme-name')
+
+    return add_function_marks(res)
+
 def icon_theme():
-    return add_function_marks(__gtk_fetch('gtk-icon-theme-name'))
-    
+    res = __make_me_pretty(
+        run_command("gsettings get org.gnome.desktop.interface icon-theme"))
+    if not res:
+        res = __gtk_fetch('gtk-icon-theme-name')
+
+    return add_function_marks(res)
+
 def cursor_theme():
-    return add_function_marks(__gtk_fetch('gtk-cursor-theme-name'))
+    res = __make_me_pretty(
+        run_command("gsettings get org.gnome.desktop.interface cursor-theme"))
+    if not res:
+        res = __gtk_fetch('gtk-cursor-theme-name')
+
+    return add_function_marks(res)
 
 def gtk_font():
-    return add_function_marks(__gtk_fetch('gtk-font-name'))
+    res = __make_me_pretty(
+        run_command("gsettings get org.gnome.desktop.interface font-name"))
+    if not res:
+        res = __gtk_fetch('gtk-font-name')
 
+    return add_function_marks(res)
 
 def cpu(round_to=2, full_name=False, colorize=False):
 
