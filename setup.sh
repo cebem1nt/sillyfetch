@@ -6,7 +6,7 @@ if [ ! -d  "$CONFIG_DIR" ]; then
     echo "Creating config directory..."
     mkdir -p "$CONFIG_DIR"
     echo "Copying default config"
-    cp default_config.py "$CONFIG_DIR"
+    cp default_config.py "$CONFIG_DIR/config.py"
 fi
 
 if [ ! -f "$SILLYFETCH_BIN" ]; then
