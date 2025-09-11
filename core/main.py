@@ -3,6 +3,7 @@ import shutil, sys, os, re, subprocess, core.fetches
 from itertools import zip_longest
 from utils.logos import get_logos_values
 from utils.colors import get_color, r, color_codes
+from utils.functions import add_function_marks_wrapper
 
 class ConfigInterlayer:
     def __init__(self, settings: dict) -> None:
