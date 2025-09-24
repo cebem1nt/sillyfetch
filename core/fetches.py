@@ -366,9 +366,10 @@ def colors(background=True, char="   ", normal_only=False):
 
     for i, color in enumerate(palette.keys()):
         if normal_only and i == 8:
+            # First 8 colors are normal styles, next 8 are bright ones
             return res
         
-        if i / 8 == 1:
+        if i == 8:
             res += "\n"
         res += f"{palette[color]}{char}{r}" 
 
