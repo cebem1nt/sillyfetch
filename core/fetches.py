@@ -360,19 +360,23 @@ def gpu_driver(single_driver=True):
     return add_function_marks(drivers[0])
 
 def colors(background=True, char="   ", normal_only=False):
-    res = ""
+    out = [""]
+    palette_type = 0 # 0 is normal styles, 1 is bright
 
     palette = cb if background else cf
 
     for i, color in enumerate(palette.keys()):
         if normal_only and i == 8:
-            return res
+            # First 8 colors are normal styles, next 8 are bright ones
+            return out[0]
         
-        if i / 8 == 1:
-            res += "\n"
-        res += f"{palette[color]}{char}{r}" 
+        if i == 8:
+            out.append("")
+            palette_type += 1
 
-    return res
+        out[palette_type] += f"{palette[color]}{char}{r}" 
+
+    return '%^&' + '%!&'.join(out)
 
 
 def disk(path='/', colorize=True, file_system=True, percent=True, round_mem_to=2):

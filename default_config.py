@@ -22,7 +22,6 @@ settings = {
         Icons: {icon_theme()}
 
         {colors()}
-
     """,
     # Possible functions:
     #   uptime(up=False, length="full") 
