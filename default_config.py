@@ -180,8 +180,9 @@ settings = {
      
     #   distro names:   # if you want exact distro ascci art, pass distro's name
     #       Values:
-    #       arch ubuntu debian fedora centos manjaro alpine linuxmint opensuse-leap kali parrot zorin
-    #       slackware solus puppy tails rhel clear artix void opensuse-tumbleweed peppermintos gentoo
+    #       arch ubuntu debian fedora centos manjaro alpine linuxmint opensuse-leap kali parrot zorin bedrock
+    #       slackware solus puppy tails rhel clear artix void opensuse-tumbleweed peppermintos gentoo cachyos
+    #       linux mandriva GNU freebsd devuan
 
     "logo_info_whitespace" : 3,
     # lenght of whitespace between logo and information

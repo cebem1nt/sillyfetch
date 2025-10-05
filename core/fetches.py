@@ -16,6 +16,8 @@ def distro_id():
         os_file = '/bedrock/etc/os-release'
     elif os.path.isfile('/etc/os-release'):
         os_file = '/etc/os-release'
+    elif which("freebsd-version"):
+        return "freebsd"
     else:
         return ""
 
