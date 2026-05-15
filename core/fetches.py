@@ -433,37 +433,35 @@ def monitor(refresh_rate=True, inch=True):
     Get information about monitors with xrandr or
     by looking in to /sys/class/drm/*/modes file.
 
-    TODO: Doesn't work without xorg / xwayland
+    TODO: refresh rate fetch does not work without xwayland
     """
 
     xrandr_output = run_command("xrandr | grep '*' | awk '{print $1, $2}'")
+    monitors = []
 
     if which('xrandr') is None or "Can't open display" in xrandr_output:
         res = run_command("cat /sys/class/drm/*/modes").split('\n')[0]
+        return add_function_marks(res)
 
-    else:
-        monitors = []
-        for monitor in xrandr_output.splitlines():
-            resolution, refresh_rate = monitor.split()
-            monitor = resolution
-           
-            if refresh_rate:
-                monitor += f" @ {round(float(refresh_rate.replace('*', '').replace('+', '') ))}Hz"
-            monitors.append(monitor)
-                
-        if inch:
-            xrandr_monitor_info_output = run_command('xrandr | grep -i "mm x"').splitlines()
-           
-            for i, monitor in enumerate(xrandr_monitor_info_output):
-                w_mm, h_mm = re.findall(r"(\d+)mm x (\d+)mm", monitor)[0]
-                w_in, h_in = (int(w_mm) / 25.4, int(h_mm) / 25.4)
+    for monitor in xrandr_output.splitlines():
+        resolution, refresh_rate = monitor.split()
+        monitor = resolution
+        
+        if refresh_rate:
+            monitor += f" @ {round(float(refresh_rate.replace('*', '').replace('+', '') ))}Hz"
+        monitors.append(monitor)
+            
+    if inch:
+        xrandr_monitor_info_output = run_command('xrandr | grep -i "mm x"').splitlines()
+        
+        for i, monitor in enumerate(xrandr_monitor_info_output):
+            w_mm, h_mm = re.findall(r"(\d+)mm x (\d+)mm", monitor)[0]
+            w_in, h_in = (int(w_mm) / 25.4, int(h_mm) / 25.4)
 
-                diagonal_inch = int(math.sqrt(w_in**2 + h_in**2))
-                monitors[i] += f' {diagonal_inch}"' 
-                
+            diagonal_inch = int(math.sqrt(w_in**2 + h_in**2))
+            monitors[i] += f' {diagonal_inch}"' 
+
     if len(monitors) > 1:
         return '%^&' + '%!&'.join(monitors)
     else:
-        res = monitors[0]
-        
-    return add_function_marks(res)
+        return add_function_marks(monitors[0])
