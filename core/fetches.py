@@ -4,7 +4,13 @@ from shutil import which
 import os, socket, re, math, platform
 
 def distro(architecture=False):
-    name = run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
+    try:
+        name = run_command("cat /etc/*-release | grep 'PRETTY_NAME'").split('=')[1].replace('"', '')
+    except:
+        if "TERMUX_VERSION" in os.environ:
+            name = "Termux"
+        else:
+            name = "Unknown"
 
     if architecture:
         name += " " + platform.machine()
@@ -87,7 +93,11 @@ def uptime(up=False, length="full"):
     return add_function_marks(uptime_info)
 
 def hostname():
-    return add_function_marks(f"{os.environ['USER']}@{socket.gethostname()}")
+    user = os.getlogin()
+    if not user:
+        user = "unknown"
+
+    return add_function_marks(f"{user}@{socket.gethostname()}")
 
 def packages():
     # tuple : querry command, package-manager name
@@ -141,7 +151,11 @@ def de():
     return add_function_marks(_get_de())
 
 def wm(protocol=True):
-    des = _get_de().lower()
+    des = _get_de()
+    if not des:
+        des = 'none'
+
+    des = des.lower()
     res = des
 
     if 'gnome' in des:
@@ -158,7 +172,7 @@ def wm(protocol=True):
         res = 'Marco'
 
     if protocol:
-        res = f"{res} ({os.getenv('XDG_SESSION_TYPE').strip().capitalize()})"
+        res = f"{res} ({os.getenv('XDG_SESSION_TYPE', 'None').strip().capitalize()})"
 
     return add_function_marks(res)
 
@@ -328,6 +342,8 @@ def gpu(full_name=True, colorize=False):
         
     if len(gpus) > 1:
         return '%^&' + '%!&'.join(gpus)
+    elif len(gpus) == 0:
+        return add_function_marks(None)
 
     return add_function_marks(gpus[0])
     
@@ -353,11 +369,15 @@ def gpu_driver(single_driver=True):
                 drivers.append(kernel_driver)
         set_cache('drivers', drivers)
 
-    if single_driver:
+    if len(drivers) > 1:
+        return '%^&' + '%!&'.join(drivers)
+    
+    elif not drivers:
+        return add_function_marks(None)
+
+    elif single_driver:
         drivers = [drivers[0]]
 
-    elif len(drivers) > 1:
-        return '%^&' + '%!&'.join(drivers)
 
     return add_function_marks(drivers[0])
 
